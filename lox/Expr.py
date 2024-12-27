@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Callable
 
 from lox.token import Token
 
@@ -16,7 +17,7 @@ class Binary(Expr):
     right: Expr
 
     def accept(self, visitor: "Visitor"):
-        return visitor.visit_binary_expr(self)
+        return visitor.visit_binary_expr(self, visitor)
 
 
 @dataclass
@@ -24,7 +25,7 @@ class Grouping(Expr):
     expression: Expr
 
     def accept(self, visitor: "Visitor"):
-        return visitor.visit_grouping_expr(self)
+        return visitor.visit_grouping_expr(self, visitor)
 
 
 @dataclass
@@ -32,7 +33,7 @@ class Literal(Expr):
     value: object
 
     def accept(self, visitor: "Visitor"):
-        return visitor.visit_literal_expr(self)
+        return visitor.visit_literal_expr(self, visitor)
 
 
 @dataclass
@@ -41,16 +42,13 @@ class Unary(Expr):
     right: Expr
 
     def accept(self, visitor: "Visitor"):
-        return visitor.visit_unary_expr(self)
+        return visitor.visit_unary_expr(self, visitor)
 
 
+@dataclass
 class Visitor:
-    def visit_binary_expr(self, expr: Binary):
-        pass
-    def visit_grouping_expr(self, expr: Grouping):
-        pass
-    def visit_literal_expr(self, expr: Literal):
-        pass
-    def visit_unary_expr(self, expr: Unary):
-        pass
+    visit_binary_expr: Callable[[Binary, "Visitor"], None]
+    visit_grouping_expr: Callable[[Grouping, "Visitor"], None]
+    visit_literal_expr: Callable[[Literal, "Visitor"], None]
+    visit_unary_expr: Callable[[Unary, "Visitor"], None]
 

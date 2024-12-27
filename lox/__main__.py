@@ -1,12 +1,9 @@
 import sys
 
-from lox import Expr
-from lox.AstPrinter import AstPrinter
-from lox.error import HAD_ERROR, report
+from lox.ast_printer import ast_printer
+from lox.error import HAD_ERROR
 from lox.parser import parse
 from lox.scanner import scan_tokens
-from lox.token import Token
-from lox.token_type import TokenType
 
 
 def main():
@@ -55,7 +52,7 @@ def run(source: str):
     if HAD_ERROR:
         return None
 
-    print(AstPrinter().print(expression))
+    print(ast_printer(expression))
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ def define_ast(output_dir: str, base_name: str, types: list[str]):
 
     contents = []
     contents.append("from dataclasses import dataclass")
+    contents.append("from typing import Callable")
     contents.append("")
     contents.append("from lox.token import Token")
     contents.append("")
@@ -44,18 +45,19 @@ def define_type(contents: list[str], base_name: str, class_name: str, fields: st
     
     contents.append("")
     contents.append('    def accept(self, visitor: "Visitor"):')
-    contents.append(f"        return visitor.visit_{class_name.lower()}_{base_name.lower()}(self)")
+    contents.append(f"        return visitor.visit_{class_name.lower()}_{base_name.lower()}(self, visitor)")
     contents.append("")
     contents.append("")
     
     return contents
 
+
 def define_visitor(contents: list[str], base_name: str, types: list[str]):
+    contents.append("@dataclass")
     contents.append("class Visitor:")
     for type in types:
         class_name = type.split("-")[0].strip()
-        contents.append(f"    def visit_{class_name.lower()}_{base_name.lower()}({base_name.lower()}: {class_name}):")
-        contents.append("        pass")
+        contents.append(f'    visit_{class_name.lower()}_{base_name.lower()}: Callable[[{class_name}, "Visitor"], None]')
     
     contents.append("")
     
