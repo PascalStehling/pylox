@@ -1,7 +1,8 @@
 import sys
 
-from lox.ast_printer import ast_printer
-from lox.error import HAD_ERROR
+# from lox.ast_printer import ast_printer
+from lox.error import HAD_ERROR, HAD_RUNTIME_ERROR
+from lox.interpreter import interpret
 from lox.parser import parse
 from lox.scanner import scan_tokens
 
@@ -21,6 +22,7 @@ def main():
 
 def run_file(path: str):
     global HAD_ERROR
+    global HAD_RUNTIME_ERROR
     with open(path, "r") as file:
         content = file.read()
 
@@ -28,6 +30,8 @@ def run_file(path: str):
 
     if HAD_ERROR:
         sys.exit(65)
+    if HAD_RUNTIME_ERROR:
+        sys.exit(70)
     
 
 
@@ -52,7 +56,7 @@ def run(source: str):
     if HAD_ERROR:
         return None
 
-    print(ast_printer(expression))
+    print(interpret(expression))
 
 
 if __name__ == "__main__":
