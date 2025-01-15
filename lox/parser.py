@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from lox import Expr
-import lox
+from lox import Stmt
 import lox.error
 from lox.token import Token
 from lox.token_type import TokenType
@@ -16,12 +16,30 @@ class Cursor:
     current: int = 0
 
 
-def parse(tokens: list[Token]) -> Expr.Expr | None:
+def parse(tokens: list[Token]) -> list[Stmt.Stmt] | None:
     cursor = Cursor(tokens)
-    try:
-        return expression(cursor)
-    except ParseError:
-        return None
+    statements: list[Stmt.Stmt] = []
+    while not is_at_end(cursor):
+        statements.append(statement(cursor))
+    return statements
+
+
+def statement(cursor: Cursor):
+    if match(cursor, TokenType.PRINT):
+        return printStatement(cursor)
+    return expressionStatement(cursor)
+
+
+def printStatement(cursor: Cursor):
+    value = expression(cursor)
+    consume(cursor, TokenType.SEMICOLON, "Expect ';' after value")
+    return Stmt.Print(value)
+
+
+def expressionStatement(cursor: Cursor):
+    expr = expression(cursor)
+    consume(cursor, TokenType.SEMICOLON, "Expect ';' after expression")
+    return Stmt.Expression(expr)
 
 
 def expression(cursor: Cursor):
@@ -90,7 +108,6 @@ def primary(cursor: Cursor):
         return Expr.Literal(True)
     if match(cursor, TokenType.NIL):
         return Expr.Literal(None)
-    
 
     if match(cursor, TokenType.NUMBER, TokenType.STRING):
         return Expr.Literal(previous(cursor).literal)
@@ -101,6 +118,7 @@ def primary(cursor: Cursor):
         return Expr.Grouping(expr)
 
     raise error(peek(cursor), "Expected Expression")
+
 
 def consume(cursor: Cursor, type: TokenType, message: str):
     if check(cursor, type):

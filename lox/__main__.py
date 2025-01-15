@@ -1,6 +1,7 @@
 import sys
 
 # from lox.ast_printer import ast_printer
+from lox.Stmt import Stmt
 from lox.error import HAD_ERROR, HAD_RUNTIME_ERROR
 from lox.interpreter import interpret
 from lox.parser import parse
@@ -50,13 +51,12 @@ def run_prompt():
 def run(source: str):
 
     tokens = scan_tokens(source)
-    expression = parse(tokens)
-
+    statements: list[Stmt] = parse(tokens)
 
     if HAD_ERROR:
         return None
 
-    print(interpret(expression))
+    interpret(statements)
 
 
 if __name__ == "__main__":

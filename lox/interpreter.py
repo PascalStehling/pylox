@@ -1,20 +1,42 @@
-from lox.Expr import Binary, Expr, Grouping, Literal, Unary, Visitor
+from dataclasses import dataclass
+from lox.Expr import Binary, Expr, Grouping, Literal, Unary, ExprVisitor
+from lox.Stmt import Stmt, StmtVisitor, Expression
 from lox.error import runtimeError
 from lox.exceptions import RuntimeException
 from lox.token import Token
 from lox.token_type import TokenType
 
 
-def interpret(expression: Expr):
+@dataclass
+class Visitor(ExprVisitor, StmtVisitor):
+    pass
+
+
+def interpret(statements: list[Stmt]):
     interpreter = Visitor(visit_binary_expr=visit_binary_expr,
                           visit_grouping_expr=visit_grouping_expr,
                           visit_literal_expr=visit_literal_expr,
-                          visit_unary_expr=visit_unary_expr)
+                          visit_unary_expr=visit_unary_expr,
+                          visit_expression_stmt=visit_expression_stmt,
+                          visit_print_stmt=visit_print_stmt)
     try:
-        result = expression.accept(interpreter)
-        return stringify(result)
+        for statement in statements:
+            execute(statement, interpreter)
     except RuntimeException as error:
         runtimeError(error)
+
+
+def execute(stmt: Stmt, visitor: Visitor):
+    stmt.accept(visitor)
+
+
+def visit_expression_stmt(stmt: Expression, visitor: Visitor):
+    evaluate(stmt.expression, visitor)
+
+
+def visit_print_stmt(stmt: Expression, visitor: Visitor):
+    value = evaluate(stmt.expression, visitor)
+    print(stringify(value))
 
 
 def visit_literal_expr(expr: Literal, _: Visitor):
@@ -38,7 +60,7 @@ def visit_unary_expr(expr: Unary, visitor: Visitor) -> float:
     return None
 
 
-def visit_binary_expr(expr: Binary, visitor:Visitor):
+def visit_binary_expr(expr: Binary, visitor: Visitor):
     left = evaluate(expr.left, visitor)
     right = evaluate(expr.right, visitor)
 
@@ -115,14 +137,15 @@ def check_number_operands(operator: Token, left: object, right: object):
 
     raise RuntimeException(operator, "Operands must be a numbers")
 
+
 def stringify(obj: object):
     if obj is None:
         return "nil"
-    
+
     if isinstance(obj, float):
         text = str(obj)
         if text.endswith(".0"):
             text = text[:-2]
         return text
-    
+
     return str(obj)

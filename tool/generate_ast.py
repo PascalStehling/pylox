@@ -1,10 +1,15 @@
 import sys
 
-AST_TYPES = [
+EXPR_TYPES = [
     "Binary - left: Expr,operator: Token, right: Expr",
     "Grouping - expression: Expr",
     "Literal - value: object",
     "Unary - operator: Token, right: Expr",
+]
+
+STATEMENT_TYPES = [
+    'Expression - expression: Expr',
+    "Print - expression: Expr",
 ]
 
 def define_ast(output_dir: str, base_name: str, types: list[str]):
@@ -18,7 +23,7 @@ def define_ast(output_dir: str, base_name: str, types: list[str]):
     contents.append("")
     contents.append("@dataclass")
     contents.append(f"class {base_name}:")
-    contents.append('    def accept(self, visitor: "Visitor"):')
+    contents.append(f'    def accept(self, visitor: "{base_name}Visitor"):')
     contents.append("        pass")
     contents.append("")
     contents.append("")
@@ -44,7 +49,7 @@ def define_type(contents: list[str], base_name: str, class_name: str, fields: st
         contents.append(f"    {field.strip()}")
     
     contents.append("")
-    contents.append('    def accept(self, visitor: "Visitor"):')
+    contents.append(f'    def accept(self, visitor: "{base_name}Visitor"):')
     contents.append(f"        return visitor.visit_{class_name.lower()}_{base_name.lower()}(self, visitor)")
     contents.append("")
     contents.append("")
@@ -54,10 +59,10 @@ def define_type(contents: list[str], base_name: str, class_name: str, fields: st
 
 def define_visitor(contents: list[str], base_name: str, types: list[str]):
     contents.append("@dataclass")
-    contents.append("class Visitor:")
+    contents.append(f"class {base_name}Visitor:")
     for type in types:
         class_name = type.split("-")[0].strip()
-        contents.append(f'    visit_{class_name.lower()}_{base_name.lower()}: Callable[[{class_name}, "Visitor"], None]')
+        contents.append(f'    visit_{class_name.lower()}_{base_name.lower()}: Callable[[{class_name}, "{base_name}Visitor"], None]')
     
     contents.append("")
     
@@ -69,4 +74,5 @@ if __name__ == '__main__':
         sys.exit(64)
 
     output_dir = sys.argv[1]
-    define_ast(output_dir, "Expr", AST_TYPES)
+    define_ast(output_dir, "Expr", EXPR_TYPES)
+    define_ast(output_dir, "Stmt", STATEMENT_TYPES)

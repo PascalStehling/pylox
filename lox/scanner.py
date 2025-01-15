@@ -120,7 +120,7 @@ def scan_token(cursor: Cursor):
                 return extract_number_token(cursor)
 
             if is_alpha(char):
-                return extract_identifier_token(char)
+                return extract_identifier_token(cursor)
 
             error(cursor.line, "Unexpected Character")
             return
