@@ -1,3 +1,9 @@
 print "one";
 print true;
-print (1 - (2 + 3) * 5) / 6;
+
+var a = (1 - (2 + 3) * 5) / 6;
+var b = 10;
+print a + b;
+
+b = 15;
+print b;

@@ -1,30 +1,33 @@
 import sys
 
 EXPR_TYPES = [
-    "Binary - left: Expr,operator: Token, right: Expr",
+    "Assign - name: Token, value: Expr",
+    "Binary - left: Expr, operator: Token, right: Expr",
     "Grouping - expression: Expr",
     "Literal - value: object",
     "Unary - operator: Token, right: Expr",
+    "Variable - name: Token"
 ]
 
 STATEMENT_TYPES = [
-    'Expression - expression: Expr',
+    "Expression - expression: Expr",
     "Print - expression: Expr",
+    "Var - name: Token, initializer: Expr | None"
 ]
 
 def define_ast(output_dir: str, base_name: str, types: list[str]):
 
     contents = []
     contents.append("from dataclasses import dataclass")
-    contents.append("from typing import Callable")
+    contents.append("from typing import Any, Callable")
     contents.append("")
     contents.append("from lox.token import Token")
     contents.append("")
     contents.append("")
     contents.append("@dataclass")
     contents.append(f"class {base_name}:")
-    contents.append(f'    def accept(self, visitor: "{base_name}Visitor"):')
-    contents.append("        pass")
+    contents.append(f'    def accept(self, visitor: "{base_name}Visitor")-> "{base_name}":')
+    contents.append(f"        return {base_name}()")
     contents.append("")
     contents.append("")
 
@@ -49,7 +52,7 @@ def define_type(contents: list[str], base_name: str, class_name: str, fields: st
         contents.append(f"    {field.strip()}")
     
     contents.append("")
-    contents.append(f'    def accept(self, visitor: "{base_name}Visitor"):')
+    contents.append(f'    def accept(self, visitor: "{base_name}Visitor") -> "{base_name}":')
     contents.append(f"        return visitor.visit_{class_name.lower()}_{base_name.lower()}(self, visitor)")
     contents.append("")
     contents.append("")
@@ -62,7 +65,7 @@ def define_visitor(contents: list[str], base_name: str, types: list[str]):
     contents.append(f"class {base_name}Visitor:")
     for type in types:
         class_name = type.split("-")[0].strip()
-        contents.append(f'    visit_{class_name.lower()}_{base_name.lower()}: Callable[[{class_name}, "{base_name}Visitor"], None]')
+        contents.append(f'    visit_{class_name.lower()}_{base_name.lower()}: Callable[[{class_name}, "{base_name}Visitor"], Any]')
     
     contents.append("")
     

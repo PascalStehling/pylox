@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from lox import Expr
 from lox import Stmt
-import lox.error
+import lox
 from lox.token import Token
 from lox.token_type import TokenType
 
@@ -16,15 +16,38 @@ class Cursor:
     current: int = 0
 
 
-def parse(tokens: list[Token]) -> list[Stmt.Stmt] | None:
+def parse(tokens: list[Token]):
     cursor = Cursor(tokens)
-    statements: list[Stmt.Stmt] = []
+    statements: list[Stmt.Stmt | None] = []
     while not is_at_end(cursor):
-        statements.append(statement(cursor))
+        statements.append(declaration(cursor))
     return statements
 
 
-def statement(cursor: Cursor):
+def declaration(cursor: Cursor) -> Stmt.Stmt | None:
+    try:
+        if match(cursor, TokenType.VAR):
+            return var_declaration(cursor)
+        return statement(cursor)
+    except ParseError:
+        synchronize(cursor)
+        return None
+
+
+def var_declaration(cursor: Cursor):
+    name = consume(cursor, TokenType.IDENTIFIER, "Expect variable name.")
+
+    initializer = None
+    if match(cursor, TokenType.EQUAL):
+        initializer = expression(cursor)
+
+    consume(cursor, TokenType.SEMICOLON,
+            "Expect ';' after variable declaration")
+
+    return Stmt.Var(name, initializer)
+
+
+def statement(cursor: Cursor) -> Stmt.Stmt:
     if match(cursor, TokenType.PRINT):
         return printStatement(cursor)
     return expressionStatement(cursor)
@@ -42,14 +65,29 @@ def expressionStatement(cursor: Cursor):
     return Stmt.Expression(expr)
 
 
-def expression(cursor: Cursor):
-    return equality(cursor)
+def expression(cursor: Cursor) -> Expr.Expr:
+    return assignment(cursor)
+
+
+def assignment(cursor: Cursor) -> Expr.Expr:
+    expr = equality(cursor)
+
+    if match(cursor, TokenType.EQUAL):
+        equals = previous(cursor)
+        value = assignment(cursor)
+        if isinstance(expr, Expr.Variable):
+            name = expr.name
+            return Expr.Assign(name, value)
+
+        error(equals, "Invalid Assignment Target")
+
+    return expr
 
 
 def equality(cursor: Cursor):
     expr = comparison(cursor)
 
-    while match(cursor, TokenType.BANG_EQUAL, TokenType.EQUAL):
+    while match(cursor, TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
         operator = previous(cursor)
         right = comparison(cursor)
         expr = Expr.Binary(expr, operator, right)
@@ -92,7 +130,7 @@ def factor(cursor: Cursor):
     return expr
 
 
-def unary(cursor: Cursor) -> Expr.Unary | Expr.Literal | Expr.Grouping:
+def unary(cursor: Cursor):
     if match(cursor, TokenType.BANG, TokenType.MINUS):
         operator = previous(cursor)
         right = unary(cursor)
@@ -111,6 +149,9 @@ def primary(cursor: Cursor):
 
     if match(cursor, TokenType.NUMBER, TokenType.STRING):
         return Expr.Literal(previous(cursor).literal)
+
+    if match(cursor, TokenType.IDENTIFIER):
+        return Expr.Variable(previous(cursor))
 
     if match(cursor, TokenType.LEFT_PAREN):
         expr = expression(cursor)
